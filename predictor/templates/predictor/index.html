@@ -1,0 +1,193 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle ML Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        /* Charcoal and Deep Blue Dashboard UI */
+        body { background-color: #121212 !important; color: #e0e0e0; }
+        .bg-light { background-color: #121212 !important; }
+        .bg-white { background-color: #1a1a1a !important; color: #e0e0e0 !important; }
+        .card { background-color: #1a1a1a; border: 1px solid #2d2d2d; color: #e0e0e0; }
+        .card-header.bg-white { background-color: #1a1a1a !important; border-bottom: 1px solid #2d2d2d !important; color: #e0e0e0 !important; }
+        .text-dark { color: #ffffff !important; }
+        .text-secondary { color: #b0b0b0 !important; }
+        .border-end, .border-bottom { border-color: #2d2d2d !important; }
+        .nav-link { color: #b0b0b0; }
+        .nav-link.active { background-color: #002d5a !important; color: #ffffff !important; }
+        .nav-link:not(.active):hover { background-color: #2d2d2d; color: #ffffff; }
+        .table { color: #e0e0e0 !important; border-color: #2d2d2d; }
+        .text-primary { color: #3751FF !important; }
+        
+        /* Ensure the map container has a background that matches the theme before it loads */
+        #rwanda-map { background: #f8f9fa; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-light">
+    <div id="district-data-store" style="display: none;">{{ district_data|safe }}</div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-white border-end sticky-top vh-100 overflow-y-auto p-3">
+                <div class="mb-4 ps-2">
+                    <h5 class="text-primary fw-bold mb-0">Vehicle ML</h5>
+                    <small class="text-muted">EDA</small>
+                </div>
+                <div id="data_exploration-nav" class="nav nav-pills flex-column">
+                    <a class="nav-link mb-1 active" href="#dataset_exploration">Data Exploration</a>
+                    <a class="nav-link mb-1" href="#data_description">Data Description</a>
+                    <a class="nav-link mb-1" href="#rwanda_map">Rwanda Map</a>
+                    <a class="nav-link mb-1" href="{% url 'regression_analysis' %}">Regression Analysis</a>
+                    <a class="nav-link mb-1" href="{% url 'classification_analysis' %}">Classification Analysis</a>
+                    <a class="nav-link mb-1" href="{% url 'clustering_analysis' %}">Clustering Analysis</a>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4" 
+                data-bs-spy="scroll" 
+                data-bs-target="#data_exploration-nav" 
+                data-bs-smooth-scroll="true" 
+                tabindex="0">
+                
+                <header class="mb-4 border-bottom pb-3">
+                    <h1 class="fw-bold text-dark">Vehicle Insights Dashboard</h1>
+                    <p class="text-secondary mb-0">Exploratory Data Analysis</p>
+                </header>
+                
+                <section id="dataset_exploration" class="mb-5" style="padding-top: 20px;">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <span class="fw-bold">Data Exploration</span>
+                        </div>
+                        <div class="card-body overflow-x-auto">
+                            {{ dataset_exploration|safe }}
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="data_description" class="mb-5" style="padding-top: 20px;">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <span class="fw-bold">Statistical Analysis</span>
+                        </div>
+                        <div class="card-body overflow-x-auto">
+                            {{ data_exploration|safe }}
+                        </div>
+                    </div>
+                </section>
+
+                <section id="rwanda_map" class="mb-5" style="padding-top: 20px;">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <span class="fw-bold">Rwanda Vehicle Clients Distribution by District</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="rwanda-map" style="width:100%; height:600px;"></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Reading the data from the hidden HTML element instead of using template tags in JS
+        const dataElement = document.getElementById('district-data-store');
+        let districtData = [];
+        
+        try {
+            // This replaces single quotes with double quotes to make it valid JSON
+            const rawContent = dataElement.textContent.replace(/'/g, '"');
+            districtData = JSON.parse(rawContent);
+        } catch (e) {
+            console.error("Error parsing district data:", e);
+        }
+
+        const clientCounts = {};
+        districtData.forEach(d => {
+            clientCounts[d.name] = d.clients;
+        });
+
+        async function renderRwandaDistrictMap() {
+            try {
+                const res = await fetch('{% static "predictor/rwanda_districts.geojson" %}');
+                if (!res.ok) throw new Error("GeoJSON not found");
+                const rwandaGeoJSON = await res.json();
+
+                const locations = [];
+                const z = [];
+                const hoverText = [];
+
+                rwandaGeoJSON.features.forEach(f => {
+                    const district = f.properties && (f.properties.District || f.properties.district);
+                    if (!district) return;
+                    locations.push(district);
+                    z.push(clientCounts[district] || 0);
+                    hoverText.push(`${district}<br>Clients: ${clientCounts[district] || 0}`);
+                });
+
+                // RESTORED: Original Trace Settings (Blues)
+                const choroplethTrace = {
+                    type: 'choroplethmapbox',
+                    geojson: rwandaGeoJSON,
+                    featureidkey: 'properties.District',
+                    locations: locations,
+                    z: z,
+                    colorscale: 'Blues',
+                    zmin: 0,
+                    zmax: Math.max(...z, 1),
+                    marker: {
+                        opacity: 0.65,
+                        line: { color: '#2b2b2b', width: 1.2 }
+                    },
+                    text: hoverText,
+                    hoverinfo: 'text',
+                    showscale: false
+                };
+
+                // RESTORED: Original Label Trace
+                const labelTrace = {
+                    type: 'scattermapbox',
+                    lat: districtData.map(d => d.lat),
+                    lon: districtData.map(d => d.lon),
+                    mode: 'text',
+                    text: districtData.map(d => `${d.name}<br>${d.clients}`),
+                    textfont: {
+                        size: 13,
+                        color: '#111',
+                        family: 'Arial Black'
+                    },
+                    hoverinfo: 'skip'
+                };
+
+                // RESTORED: Original Layout (Open Street Map)
+                const layout = {
+                    title: {
+                        text: 'Rwanda Vehicle Clients Distribution by District',
+                        font: { size: 16, color: '#ffffff' }
+                    },
+                    mapbox: {
+                        style: 'open-street-map',
+                        center: { lat: -1.95, lon: 30.06 },
+                        zoom: 7
+                    },
+                    margin: { t: 50, b: 0, l: 0, r: 0 }
+                };
+
+                Plotly.newPlot('rwanda-map', [choroplethTrace, labelTrace], layout, { displayModeBar: false });
+            } catch (err) {
+                console.error('Failed to render map:', err);
+                document.getElementById('rwanda-map').innerHTML = '<div class="p-4 text-center">Unable to load map. Check console for details.</div>';
+            }
+        }
+
+        renderRwandaDistrictMap();
+    </script>
+</body>
+</html>
