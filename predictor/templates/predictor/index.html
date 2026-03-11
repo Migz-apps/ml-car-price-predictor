@@ -134,7 +134,7 @@
 
                 // RESTORED: Original Trace Settings (Blues)
                 const choroplethTrace = {
-                    type: 'choroplethmapbox',
+                    type: 'choropleth',
                     geojson: rwandaGeoJSON,
                     featureidkey: 'properties.District',
                     locations: locations,
@@ -143,7 +143,7 @@
                     zmin: 0,
                     zmax: Math.max(...z, 1),
                     marker: {
-                        opacity: 0.65,
+                        opacity: 0.8,
                         line: { color: '#2b2b2b', width: 1.2 }
                     },
                     text: hoverText,
@@ -153,31 +153,38 @@
 
                 // RESTORED: Original Label Trace
                 const labelTrace = {
-                    type: 'scattermapbox',
+                    type: 'scattergeo',
                     lat: districtData.map(d => d.lat),
                     lon: districtData.map(d => d.lon),
                     mode: 'text',
                     text: districtData.map(d => `${d.name}<br>${d.clients}`),
                     textfont: {
-                        size: 13,
+                        size: 11,
                         color: '#111',
-                        family: 'Arial Black'
+                        family: 'Arial'
                     },
                     hoverinfo: 'skip'
                 };
 
-                // RESTORED: Original Layout (Open Street Map)
+                // RESTORED: Original Layout (Geo)
                 const layout = {
                     title: {
                         text: 'Rwanda Vehicle Clients Distribution by District',
                         font: { size: 16, color: '#ffffff' }
                     },
-                    mapbox: {
-                        style: 'open-street-map',
-                        center: { lat: -1.95, lon: 30.06 },
-                        zoom: 7
+                    geo: {
+                        fitbounds: 'locations',
+                        visible: true,
+                        showcountries: true,
+                        countrycolor: '#cccccc',
+                        showcoastlines: true,
+                        coastlinecolor: '#cccccc',
+                        projection: { type: 'mercator' },
+                        bgcolor: 'transparent'
                     },
-                    margin: { t: 50, b: 0, l: 0, r: 0 }
+                    margin: { t: 50, b: 0, l: 0, r: 0 },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent'
                 };
 
                 Plotly.newPlot('rwanda-map', [choroplethTrace, labelTrace], layout, { displayModeBar: false });

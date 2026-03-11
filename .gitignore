@@ -1,0 +1,122 @@
+# Python / Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+*.venv
+
+# Django / Web framework
+*.log
+*.pot
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+collectstatic/
+
+# ML / Data Science artifacts
+*.pkl
+*.joblib
+*.pickle
+*.pkl.gz
+*.sav
+*.h5
+*.keras
+*.pth
+*.pt
+*.onnx
+*.model
+models/
+checkpoints/
+runs/
+wandb/
+lightning_logs/
+mlruns/
+*.bin
+*.weights
+
+# Keep the main dataset (most important!)
+!vehicles_ml_dataset.csv
+
+# Large / temporary data files (uncomment if needed)
+#*.csv
+#*.parquet
+#*.feather
+#data/
+#datasets/
+
+# Jupyter & notebooks (if you ever add any)
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# IDE / Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.code-workspace
+.project
+.pydevproject
+.settings/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Dependency managers & lock files you might not want to commit
+Pipfile.lock
+poetry.lock
+uv.lock
+requirements/*.txt       # ← only if you have extra requirements-*.txt files
+
+# Distribution & packaging
+dist/
+build/
+*.egg
+*.egg-info/
+MANIFEST
+*.manifest
+
+# Testing & coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+.mypy_cache/
+dmypy.json
+
+# Logs & temporary folders
+logs/
+tmp/
+temp/
+*.bak
+*.tmp
+*.backup
+
+# Project-specific generated folders/files (from your structure)
+config/__pycache__/
+model_generators/__pycache__/
+model_generators/classification/__pycache__/
+model_generators/clustering/__pycache__/
+model_generators/regression/__pycache__/
+predictor/__pycache__/
+predictor/static/predictor/__pycache__/
