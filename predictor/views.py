@@ -7,7 +7,6 @@ from predictor.data_exploration import dataset_exploration, data_exploration
 # Import evaluation functions
 from model_generators.clustering.train_cluster import (
     evaluate_clustering_model,
-    calculate_coefficient_of_variation,
     get_cluster_mapping,
 )
 from model_generators.classification.train_classifier import evaluate_classification_model
@@ -136,8 +135,6 @@ def classification_analysis(request):
 
 def clustering_analysis(request):
     eval_results = evaluate_clustering_model()
-    # Add coefficient of variation to evaluations
-    eval_results["cv"] = calculate_coefficient_of_variation()
     context = {"evaluations": eval_results}
     
     if request.method == "POST":
